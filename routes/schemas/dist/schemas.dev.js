@@ -18,6 +18,7 @@ var groupSchema = _mongoose["default"].Schema({
     type: _mongoose["default"].Types.ObjectId,
     ref: 'user'
   },
+  members: Array,
   tage: [String],
   selectFile: String,
   likeCount: {
@@ -38,6 +39,7 @@ var userSchema = _mongoose["default"].Schema({
   email: String,
   uid: String,
   photoURL: String,
+  activeRoomId: String,
   isOnline: Boolean
 });
 

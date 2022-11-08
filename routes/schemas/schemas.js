@@ -6,6 +6,7 @@ const groupSchema = mongoose.Schema({
   comment: String,
   ownerName: String,
   ownerData: { type: mongoose.Types.ObjectId, ref: 'user' },
+  members: Array,
   tage: [String],
   selectFile: String,
   likeCount: {
@@ -26,6 +27,7 @@ const userSchema = mongoose.Schema({
   email: String,
   uid: String,
   photoURL: String,
+  activeRoomId: String,
   isOnline: Boolean
 })
 
