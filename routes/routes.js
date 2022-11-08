@@ -59,6 +59,11 @@ router.post('/get_groups', function (req, res) {
       res.send(e)
     })
 })
+router.get('/', function (req, res) {
+
+  res.send('Server is running')
+  
+})
 
 // router.post('/add_member', function (req, res) {
 
