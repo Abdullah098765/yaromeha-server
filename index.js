@@ -27,5 +27,4 @@ const server = app.listen(PORT, a =>
   console.log(`Server running on port: ${PORT}`)
 )
 
-
 socketIO(server)

@@ -4,6 +4,12 @@ import mongoose from 'mongoose'
 
 const router = express.Router()
 
+// aap
+
+router.get('/', function (req, res) {
+  res.send('Server is running')
+})
+
 // User Routes
 
 router.post('/add_user', function (req, res) {
@@ -23,7 +29,7 @@ router.post('/remove_user', function (req, res) {
   ref.User.findOneAndDelete({ email: req.body.uid }).then(e => {
     res.send(e)
   })
-  console.log('running');
+  console.log('running')
 })
 
 // Group Routes
@@ -59,10 +65,11 @@ router.post('/get_groups', function (req, res) {
       res.send(e)
     })
 })
-router.get('/', function (req, res) {
-
-  res.send('Server is running')
-  
+ref.Group.where()
+.populate('ownerData')
+.find()
+.then(e => {
+  console.log(e);
 })
 
 // router.post('/add_member', function (req, res) {
@@ -85,7 +92,7 @@ router.get('/', function (req, res) {
 //       { _id: req.body.id },
 //       { $pull: { members: req.body.user } }
 //     ).then(e => {
-  
+
 //       console.log(e);
 //     })
 
