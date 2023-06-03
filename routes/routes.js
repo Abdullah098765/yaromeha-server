@@ -14,10 +14,13 @@ router.get('/', function (req, res) {
 
 router.post('/add_user', function (req, res) {
   const doc = new ref.User(req.body)
+  
   doc.save()
 
   ref.User.find().then(e => {
     res.send(e)
+  console.log('User added' ,e);
+
   })
 })
 
@@ -29,8 +32,9 @@ router.post('/get_user', function (req, res) {
 router.post('/remove_user', function (req, res) {
   ref.User.findOneAndDelete({ email: req.body.uid }).then(e => {
     res.send(e)
+    console.log('user logged out', e)
   })
-  console.log('running')
+  
 })
 
 // Group Routes
