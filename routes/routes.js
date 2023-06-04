@@ -51,7 +51,7 @@ router.post("/remove_user", function(req, res) {
 //     })
 // })
 
-router.post("/create-groups", async (req, res) => {
+router.post("/create-group", async (req, res) => {
   try {
     const { groupName, groupDescription, ownerId, members } = req.body;
 
