@@ -1,81 +1,101 @@
-import express from 'express'
-import ref from './schemas/schemas.js'
-import mongoose from 'mongoose'
+import express from "express";
+import ref from "./schemas/schemas.js";
+import mongoose from "mongoose";
 
-const router = express.Router()
+const router = express.Router();
 
 // app
 
-router.get('/', function (req, res) {
-  res.send('Server is running')
-})
+router.get("/", function(req, res) {
+  res.send("Server is running");
+});
 
 // User Routes
 
-router.post('/add_user', function (req, res) {
-  const doc = new ref.User(req.body)
-  
-  doc.save()
+router.post("/add_user", function(req, res) {
+  const doc = new ref.User(req.body);
+
+  doc.save();
 
   ref.User.find().then(e => {
-    res.send(e)
-  console.log('User added' ,e);
+    res.send(e);
+    console.log("User added", e);
+  });
+});
 
-  })
-})
-
-router.post('/get_user', function (req, res) {
+router.post("/get_user", function(req, res) {
   ref.User.findOne({ email: req.body.uid }).then(e => {
-    res.send(e)
-  })
-})
-router.post('/remove_user', function (req, res) {
+    res.send(e);
+  });
+});
+router.post("/remove_user", function(req, res) {
   ref.User.findOneAndDelete({ email: req.body.uid }).then(e => {
-    res.send(e)
-    console.log('user logged out', e)
-  })
-  
-})
+    res.send(e);
+    console.log("user logged out", e);
+  });
+});
 
 // Group Routes
 
-router.post('/post_group', function (req, res) {
-  const doc = new ref.Group(req.body)
-  doc.save().then(e => {
-    res.send(e._id)
-  })
+// router.post('/groups', function (req, res) {
+//   const doc = new ref.Group(req.body)
+//   doc.save().then(e => {
+//     res.send(e._id)
+//   })
+// // console.log(req.body);
+//   ref.Group.where()
+//     .populate('ownerData')
+//     .find()
+//     .then(e => {
+//       // res.send(e)
+//     })
+// })
 
-  ref.Group.where()
-    .populate('ownerData')
-    .find()
-    .then(e => {
-      // res.send(e)
-    })
-})
+router.post("/groups", async (req, res) => {
 
-router.post('/get_group', function (req, res) {
-  ref.Group.where({ _id: req.body.id })
-    .populate('ownerData')
+
+  try {
+    const { groupName, groupDescription, ownerId, members } = req.body;
+
+    const existingGroup = await ref.Group.findOne({ ownerId });
+
+    if (existingGroup) {
+      return res.status(400).json({ error: 'User has already created a group' });
+    }
+
+
+    const group = await ref.Group.create({
+      groupName,
+      groupDescription,
+      ownerId,
+      members
+    });
+
+    res.status(201).json({ message: "Group created successfully", group });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Failed to create group" });
+  }
+});
+
+router.post("/get_group", function(req, res) {
+  ref.Group
+    .where({ _id: req.body.id })
+    .populate("ownerData")
     .findOne()
     .then(e => {
-      res.send(e)
-    })
-})
+      res.send(e);
+    });
+});
 
-router.post('/get_groups', function (req, res) {
-  ref.Group.where()
-    .populate('ownerData')
-    .find()
-    .then(e => {
-      res.send(e)
-    })
-})
-ref.Group.where()
-.populate('ownerData')
-.find()
-.then(e => {
+router.post("/get_groups", function(req, res) {
+  ref.Group.where().populate("ownerData").find().then(e => {
+    res.send(e);
+  });
+});
+ref.Group.where().populate("ownerData").find().then(e => {
   console.log(e);
-})
+});
 
 // router.post('/add_member', function (req, res) {
 
@@ -103,4 +123,4 @@ ref.Group.where()
 
 // })
 
-export default router
+export default router;
