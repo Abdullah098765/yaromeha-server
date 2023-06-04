@@ -51,18 +51,17 @@ router.post("/remove_user", function(req, res) {
 //     })
 // })
 
-router.post("/groups", async (req, res) => {
-
-
+router.post("/create-groups", async (req, res) => {
   try {
     const { groupName, groupDescription, ownerId, members } = req.body;
 
     const existingGroup = await ref.Group.findOne({ ownerId });
 
     if (existingGroup) {
-      return res.status(400).json({ error: 'User has already created a group' });
+      return res
+        .status(400)
+        .json({ error: "User has already created a group" });
     }
-
 
     const group = await ref.Group.create({
       groupName,
@@ -88,14 +87,34 @@ router.post("/get_group", function(req, res) {
     });
 });
 
-router.post("/get_groups", function(req, res) {
-  ref.Group.where().populate("ownerData").find().then(e => {
-    res.send(e);
-  });
+// Backend API endpoint to retrieve group data
+router.get("/get_groups", async (req, res) => {
+  try {
+    // Fetch group data from the database
+    const groups = await ref.Group.find();
+
+    const formattedGroups = groups.map(group => {
+      return {
+        _id: group._id,
+        groupName: group.groupName,
+        groupDescription: group.groupDescription,
+        members: group.members
+        // Add other necessary properties
+      };
+    });
+
+    // Send the formatted group data as the response
+    res.json(formattedGroups);
+  } catch (error) {
+    // Handle any errors that occur during the process
+    console.error("Error retrieving groups data:", error);
+    res.status(500).json({ error: "Failed to retrieve groups data" });
+  }
 });
-ref.Group.where().populate("ownerData").find().then(e => {
-  console.log(e);
-});
+
+// ref.Group.where().populate("ownerData").find().then(e => {
+//   console.log(e);
+// });
 
 // router.post('/add_member', function (req, res) {
 
