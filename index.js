@@ -28,3 +28,4 @@ const server = app.listen(PORT, a =>
 )
 
 socketIO(server)
+export default server

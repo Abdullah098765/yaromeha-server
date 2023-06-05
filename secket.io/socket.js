@@ -1,62 +1,65 @@
-import { Server } from 'socket.io'
-import ref from '../routes/schemas/schemas.js'
+import { Server } from "socket.io";
+import ref from "../routes/schemas/schemas.js";
+import mongoose from "mongoose";
 
 export const socketIO = server => {
   const io = new Server(server, {
     cors: {
-      origin: 'http://localhost:3000',
-      methods: ['GET', 'POST']
+      origin: "https://yaromeha-nymd.vercel.app",
+      methods: ["GET", "POST"]
     }
-  })
+  });
 
-  io.on('connection', socket => {
-    console.log(
-      'a user connected'
-      // socket.handshake.query
-    )
-    var member = {}
+  const changeStream = ref.Group.watch();
 
-    // ref.User.findOneAndUpdate(
-    //   { email: socket.handshake.query.userId },
-    //   { activeRoomId: socket.handshake.query.roomId }
-    // ).then(e => {
-    //   console.log(e)
-    // })
+  changeStream.on("change", change => {
+    const groupId = change.documentKey._id.toString();
+    io.emit(groupId, change);
+  });
 
-    ref.User.findOne({ email: socket.handshake.query.userId }).then(member => {
-      member = member
-      console.log(member)
-      ref.Group.where({ _id: socket.handshake.query.roomId })
-        .updateOne({ $push: { members: member } })
-        .then(e => {
-          ref.Group.find().then(e => {
-            console.log(e)
-            setTimeout(() => {}, 5000)
-          })
-        })
-    })
+  io.on("connection", socket => {
+    console.log("A user connected");
 
-    //   socket.emit('sending', 'Hi User')
-    //   socket.on('recieving', data => {
-    //   console.log(data, 'recieved')
-    // })
+    // Handle disconnect event
+    socket.on("disconnect", async () => {
+      console.log("A user disconnected");
 
-    socket.on('disconnect', () => {
-      console.log('user disconnected')
-      ref.Group.where({ _id: socket.handshake.query.roomId })
-        .updateOne(
-          { _id: socket.handshake.query.roomId },
-          { $pull: { members: { email: member.email } } }
-          // { upsert: true, multi: false }
-        )
-        .then(e => {
-          ref.Group.find().then(e => {
-            console.log(e)
-          })
-        })
-    })
-  })
-}
+      const { groupId, memberId } = socket.handshake.query;
+      console.log(groupId, memberId);
+
+      const updatedGroup = await ref.Group.findByIdAndUpdate(
+        groupId,
+        { $pull: { members: { _id: mongoose.Types.ObjectId(memberId) } } },
+        { new: true }
+      );
+
+      // Clean up any necessary resources
+    });
+  });
+
+  // io.on('connection', socket => {
+  //   console.log(
+  //     'a user connected'
+  //     // socket.handshake.query
+  //   )
+  //   var member = {}
+
+  //   socket.on('disconnect', () => {
+  //     console.log('user disconnected')
+  //     // ref.Group.where({ _id: socket.handshake.query.roomId })
+  //     //   .updateOne(
+  //     //     { _id: socket.handshake.query.roomId },
+  //     //     { $pull: { members: { email: member.email } } }
+  //     //     // { upsert: true, multi: false }
+  //     //   )
+  //     //   .then(e => {
+  //     //     ref.Group.find().then(e => {
+  //     //       console.log(e)
+  //     //     })
+  //     //   })
+  //   })
+  // })
+};
 
 // setInterval(() => {
 //   ref.Group.find().then(e => {

@@ -1,8 +1,11 @@
 import express from "express";
 import ref from "./schemas/schemas.js";
 import mongoose from "mongoose";
+import { Server } from "socket.io";
 
 const router = express.Router();
+
+
 
 // app
 
@@ -17,7 +20,7 @@ router.post("/add_user", function(req, res) {
 
   doc.save();
 
-  ref.User.findOne({uid: req.body.uid }).then(e => {
+  ref.User.findOne({ uid: req.body.uid }).then(e => {
     res.send(e);
     console.log("User added");
   });
@@ -77,14 +80,18 @@ router.post("/create-group", async (req, res) => {
   }
 });
 
-router.post("/get_group", function(req, res) {
-  ref.Group
-    .where({ _id: req.body.id })
-    .populate("ownerData")
-    .findOne()
-    .then(e => {
-      res.send(e);
-    });
+// API endpoint to get group data by ID
+router.get("/get_group", (req, res) => {
+  const groupId = req.query.groupId;
+  // Fetch the group data from the database using the group ID
+  ref.Group.findById(groupId, (err, group) => {
+    if (err) {
+      console.error("Error retrieving group data:", err);
+      res.status(500).json({ error: "Internal Server Error" });
+    } else {
+      res.status(200).json({ group });
+    }
+  });
 });
 
 router.get("/get_groups", async (req, res) => {
@@ -111,7 +118,6 @@ router.get("/get_groups", async (req, res) => {
   }
 });
 
-
 router.post("/add_member", async (req, res) => {
   const groupId = req.body.groupId;
   const userId = req.body.userId; // Assuming you have user authentication and session handling in place
@@ -123,31 +129,26 @@ router.post("/add_member", async (req, res) => {
       return res.status(404).json({ error: "User not found" });
     }
 
-    ref.Group.findOne({ _id: groupId, members: userId }, async (err, group) => {
-      if (err) {
-        console.log("Error checking group membership:", err);
-        return res.status(500).json({ error: "Internal Server Error" });
-      }
+    const group = await ref.Group.findOne({ _id: groupId, members: userId });
 
-      if (group) {
-        // User is already a member, send a response indicating that
-        return res
-          .status(200)
-          .json({ message: "User is already a member of the group" });
-      }
-
-      // User is not a member, add their object to the group's member list
-      const updatedGroup = await ref.Group.findByIdAndUpdate(
-        groupId,
-        { $addToSet: { members: user } },
-        { new: true }
-      );
-
-      // User successfully added as a member, send a response indicating that
+    if (group) {
+      // User is already a member, send a response indicating that
       return res
         .status(200)
-        .json({ message: "User has been added as a member of the group" });
-    });
+        .json({ message: "User is already a member of the group" });
+    }
+
+    // User is not a member, add their object to the group's member list
+    const updatedGroup = await ref.Group.findByIdAndUpdate(
+      groupId,
+      { $addToSet: { members: user } },
+      { new: true }
+    );
+
+    // User successfully added as a member, send a response indicating that
+    return res
+      .status(200)
+      .json({ message: "User has been added as a member of the group" });
   } catch (error) {
     console.log("Error adding user as group member:", error);
     return res.status(500).json({ error: "Internal Server Error" });
@@ -155,42 +156,46 @@ router.post("/add_member", async (req, res) => {
 });
 
 
-// router.post("/add_member", (req, res) => {
+// router.post("/add_member", async (req, res) => {
 //   const groupId = req.body.groupId;
 //   const userId = req.body.userId; // Assuming you have user authentication and session handling in place
-//   console.log(userId, groupId);
-//   // Check if the user is already a member of the group
-//   ref.Group.findOne({ _id: groupId, members: userId }, (err, group) => {
-//     if (err) {
-//       console.log("Error checking group membership:", err);
-//       return res.status(500).json({ error: "Internal Server Error" });
+
+//   try {
+//     const user = await ref.User.findById(userId);
+
+//     if (!user) {
+//       return res.status(404).json({ error: "User not found" });
 //     }
 
-//     if (group) {
-//       // User is already a member, send a response indicating that
-//       return res
-//         .status(200)
-//         .json({ message: "User is already a member of the group" });
-//     }
+//     ref.Group.findOne({ _id: groupId, members: userId }, async (err, group) => {
+//       if (err) {
+//         console.log("Error checking group membership:", err);
+//         return res.status(500).json({ error: "Internal Server Error" });
+//       }
 
-//     // User is not a member, add their ID to the group's member list
-//     ref.Group.findByIdAndUpdate(
-//       groupId,
-//       { $push: { members: userId } },
-//       { new: true },
-//       (err, updatedGroup) => {
-//         if (err) {
-//           console.log("Error adding user as group member:", err);
-//           return res.status(500).json({ error: "Internal Server Error" });
-//         }
-
-//         // User successfully added as a member, send a response indicating that
+//       if (group) {
+//         // User is already a member, send a response indicating that
 //         return res
 //           .status(200)
-//           .json({ message: "User has been added as a member of the group" });
+//           .json({ message: "User is already a member of the group" });
 //       }
-//     );
-//   });
+
+//       // User is not a member, add their object to the group's member list
+//       const updatedGroup = await ref.Group.findByIdAndUpdate(
+//         groupId,
+//         { $addToSet: { members: user } },
+//         { new: true }
+//       );
+
+//       // User successfully added as a member, send a response indicating that
+//       return res
+//         .status(200)
+//         .json({ message: "User has been added as a member of the group" });
+//     });
+//   } catch (error) {
+//     console.log("Error adding user as group member:", error);
+//     return res.status(500).json({ error: "Internal Server Error" });
+//   }
 // });
 
 // ref.Group.where().populate("ownerData").find().then(e => {
