@@ -13,7 +13,7 @@ export const socketIO = server => {
   const changeStream = ref.Group.watch();
 
   changeStream.on("change", change => {
-    if (change) {
+    if (change.documentKey._id) {
       const groupId = change.documentKey._id.toString();
       io.emit(groupId, change);
       console.log(change);

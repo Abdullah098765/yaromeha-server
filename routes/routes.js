@@ -103,7 +103,7 @@ router.get("/get_groups", async (req, res) => {
 
     const formattedGroups = groups.map(group => {
       return {
-        _id: group._id,
+        _id: group._id || "",
         groupName: group.groupName,
         groupDescription: group.groupDescription,
         members: group.members
@@ -133,12 +133,10 @@ const checkGroupMembership = (req, res, next) => {
     if (user.currentGroup !== "none") {
       console.log("You are already a member of another group.");
       // User is already a member of another group, send a response indicating they cannot join another group
-      return res
-        .status(403)
-        .json({
-          message:
-            "You are already a member of another group. Please leave the current group before joining a new one."
-        });
+      return res.status(403).json({
+        message:
+          "You are already a member of another group. Please leave the current group before joining a new one."
+      });
     }
 
     // User is not a member of any group, proceed to the next middleware or route handler
