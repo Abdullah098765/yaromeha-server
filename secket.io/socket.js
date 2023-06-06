@@ -5,7 +5,7 @@ import mongoose from "mongoose";
 export const socketIO = server => {
   const io = new Server(server, {
     cors: {
-      origin: "https://yaromeha-server-production.up.railway.app",
+      origin: "*",
       methods: ["GET", "POST"]
     }
   });
