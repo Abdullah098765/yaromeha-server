@@ -1,7 +1,7 @@
 import { Server } from "socket.io";
 import ref from "../routes/schemas/schemas.js";
 import mongoose from "mongoose";
-const { ObjectId } = require("mongodb");
+import ObjectId from "mongodb";
 
 export const socketIO = server => {
   const io = new Server(server, {
