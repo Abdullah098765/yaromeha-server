@@ -101,7 +101,7 @@ router.get("/get_groups", async (req, res) => {
 
     const formattedGroups = groups.map(group => {
       return {
-        _id: group._id,
+        _id: group._id || '',
         groupName: group.groupName,
         groupDescription: group.groupDescription,
         members: group.members
