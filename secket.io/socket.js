@@ -31,7 +31,7 @@ if (change) {
 
       const updatedGroup = await ref.Group.findByIdAndUpdate(
         groupId,
-        { $pull: { members: { uid: mongoose.Types.ObjectId(memberId) } } },
+        { $pull: { members: { userUid:memberId } } },
         { new: true }
       );
 
