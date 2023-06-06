@@ -5,7 +5,7 @@ import mongoose from "mongoose";
 export const socketIO = server => {
   const io = new Server(server, {
     cors: {
-      origin: "https://yaromeha-nymd.vercel.app",
+      origin: "http://localhost:3000",
       methods: ["GET", "POST"]
     }
   });
@@ -13,10 +13,10 @@ export const socketIO = server => {
   const changeStream = ref.Group.watch();
 
   changeStream.on("change", change => {
-if (change) {
-  const groupId = change.documentKey._id.toString();
-  io.emit(groupId, change);
-}
+    if (change) {
+      const groupId = change.documentKey._id.toString();
+      io.emit(groupId, change);
+    }
   });
 
   io.on("connection", socket => {
@@ -31,7 +31,7 @@ if (change) {
 
       const updatedGroup = await ref.Group.findByIdAndUpdate(
         groupId,
-        { $pull: { members: { userUid:memberId } } },
+        { $pull: { members: { _id: mongoose.Types.ObjectId(memberId) } } },
         { new: true }
       );
 

@@ -15,24 +15,26 @@ router.get("/", function(req, res) {
 
 // User Routes
 
-router.post("/add_user", function(req, res) {
-  const doc = new ref.User(req.body);
-
-  doc.save();
-
-  ref.User.findOne({ uid: req.body.uid }).then(e => {
-    res.send(e);
+router.post("/add_user", async function(req, res) {
+  try {
+    const doc = new ref.User(req.body);
+    await doc.save();
+    const user = await ref.User.findOne({ uid: req.body.uid });
+    res.send(user);
     console.log("User added");
-  });
+  } catch (error) {
+    console.error("Error adding user:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
 });
 
 router.post("/get_user", function(req, res) {
-  ref.User.findOne({  _id: mongoose.Types.ObjectId(req.body.uid) }).then(e => {
+  ref.User.findOne({ email: req.body.uid }).then(e => {
     res.send(e);
   });
 });
 router.post("/remove_user", function(req, res) {
-  ref.User.findOneAndDelete({  _id: mongoose.Types.ObjectId(req.body.uid)  }).then(e => {
+  ref.User.findOneAndDelete({ _id: mongoose.Types.ObjectId(req.body.uid) }).then(e => {
     res.send(e);
     console.log("user logged out", e);
   });
@@ -101,7 +103,7 @@ router.get("/get_groups", async (req, res) => {
 
     const formattedGroups = groups.map(group => {
       return {
-        _id: group._id || '',
+        _id: group._id,
         groupName: group.groupName,
         groupDescription: group.groupDescription,
         members: group.members
