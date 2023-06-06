@@ -170,13 +170,13 @@ router.post("/add_member", checkGroupMembership, async (req, res) => {
       { $addToSet: { members: user } },
       { new: true }
     );
-
-    // User successfully added as a member, send a response indicating that
-    ref.User.findByIdAndUpdate(
-      userId,
-      { currentGroup: groupId },
-      (err, user) => {}
-    );
+  // User successfully added as a member, send a response indicating that
+  ref.User.findByIdAndUpdate(
+    userId,
+    { currentGroup: groupId },
+    (err, user) => {}
+  );
+  
     return res
       .status(200)
       .json({ message: "User has been added as a member of the group" });
