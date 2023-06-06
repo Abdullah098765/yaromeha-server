@@ -120,7 +120,34 @@ router.get("/get_groups", async (req, res) => {
   }
 });
 
-router.post("/add_member", async (req, res) => {
+
+
+
+// Middleware function to check if the user is already a member of a group
+const checkGroupMembership = (req, res, next) => {
+  const userId = req.body.userId; // Assuming you have user authentication and session handling in place
+  
+  // Check if the user is already a member of any group
+  ref.Group.findOne({ members: userId }, (err, group) => {
+    if (err) {
+      console.log("Error checking group membership:", err);
+      return res.status(500).json({ error: "Internal Server Error" });
+    }
+    
+    if (group) {
+      // User is already a member of a group, send a response indicating they cannot join another group
+      return res.status(403).json({ message: "You are already a member of another group. Please leave the current group before joining a new one." });
+    }
+    
+    // User is not a member of any group, proceed to the next middleware or route handler
+    next();
+  });
+};
+
+
+
+
+router.post("/add_member",checkGroupMembership, async (req, res) => {
   const groupId = req.body.groupId;
   const userId = req.body.userId; // Assuming you have user authentication and session handling in place
 
