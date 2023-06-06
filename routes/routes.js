@@ -171,7 +171,16 @@ router.post("/add_member", checkGroupMembership, async (req, res) => {
       { new: true }
     );
 
+    // User successfully added as a member, send a response indicating that
+    ref.User.findByIdAndUpdate(userId, { currentGroup: groupId }, (err, user) => {
+      if (err) {
+        console.log('Error updating user:', err);
+        return res.status(500).json({ error: 'Internal Server Error' });
+      }
   
+      // Send a success response
+      return res.status(200).json({ message: 'User has been added as a member of the group' });
+    });
     return res
       .status(200)
       .json({ message: "User has been added as a member of the group" });
