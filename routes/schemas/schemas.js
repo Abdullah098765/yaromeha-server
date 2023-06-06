@@ -18,7 +18,10 @@ const Group = mongoose.model("Group", groupSchema);
 const userSchema = mongoose.Schema({
   displayName: String,
   blocked: Boolean,
-  current_Group:String,
+  currentGroup: {
+    type: String,
+    default: "none"
+  },
   email: String,
   uid: String,
   photoURL: String,
