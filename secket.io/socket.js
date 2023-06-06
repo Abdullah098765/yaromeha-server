@@ -1,7 +1,6 @@
 import { Server } from "socket.io";
 import ref from "../routes/schemas/schemas.js";
 import mongoose from "mongoose";
-import ObjectId from "mongodb";
 
 export const socketIO = server => {
   const io = new Server(server, {
@@ -14,10 +13,10 @@ export const socketIO = server => {
   const changeStream = ref.Group.watch();
 
   changeStream.on("change", change => {
-    if (change) {
-      const groupId = change.documentKey._id.toString();
-      io.emit(groupId, change);
-    }
+if (change) {
+  const groupId = change.documentKey._id.toString();
+  io.emit(groupId, change);
+}
   });
 
   io.on("connection", socket => {
@@ -32,7 +31,7 @@ export const socketIO = server => {
 
       const updatedGroup = await ref.Group.findByIdAndUpdate(
         groupId,
-        { $pull: { members: { _id: ObjectId(memberId) } } },
+        { $pull: { members: { uid: mongoose.Types.ObjectId(memberId) } } },
         { new: true }
       );
 
