@@ -16,6 +16,7 @@ export const socketIO = server => {
     if (change) {
       const groupId = change.documentKey._id.toString();
       io.emit(groupId, change);
+      console.log(change);
     }
   });
 
