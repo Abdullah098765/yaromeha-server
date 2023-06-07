@@ -27,7 +27,7 @@ router.post("/add_user", async function(req, res) {
 });
 
 router.post("/get_user", function(req, res) {
-  ref.User.findOne({ email: req.body.uid }).then(e => {
+  ref.User.findOne({ _id: req.body.uid }).then(e => {
     res.send(e);
   });
 });

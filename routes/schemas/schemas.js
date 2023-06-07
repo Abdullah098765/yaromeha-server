@@ -25,7 +25,7 @@ const userSchema = mongoose.Schema({
   email: String,
   uid: String,
   photoURL: String,
-  activeRoomId: String,
+  activeRoom: Boolean,
   isOnline: Boolean
 });
 

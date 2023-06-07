@@ -29,18 +29,19 @@ export const socketIO = server => {
 
       const { groupId, memberId } = socket.handshake.query;
       console.log(groupId, memberId);
+      if (groupId && memberId) {
+        const updatedGroup = await ref.Group.findByIdAndUpdate(
+          groupId,
+          { $pull: { members: { _id: mongoose.Types.ObjectId(memberId) } } },
+          { new: true }
+        );
 
-      const updatedGroup = await ref.Group.findByIdAndUpdate(
-        groupId,
-        { $pull: { members: { _id: mongoose.Types.ObjectId(memberId) } } },
-        { new: true }
-      );
-
-      try {
-        await ref.User.findByIdAndUpdate(memberId, { currentGroup: 'none' });
-        console.log('User currentGroup updated to none');
-      } catch (error) {
-        console.log('Error updating user:', error);
+        try {
+          await ref.User.findByIdAndUpdate(memberId, { currentGroup: "none" });
+          console.log("User currentGroup updated to none");
+        } catch (error) {
+          console.log("Error updating user:", error);
+        }
       }
 
       // Clean up any necessary resources
