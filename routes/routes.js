@@ -2,6 +2,7 @@ import express from "express";
 import ref from "./schemas/schemas.js";
 import mongoose from "mongoose";
 import { Server } from "socket.io";
+import cron from 'node-cron';
 
 const router = express.Router();
 
@@ -27,7 +28,7 @@ router.post("/add_user", async function(req, res) {
 });
 
 router.post("/get_user", function(req, res) {
-  ref.User.findOne({ email: req.body.uid }).then(e => {
+  ref.User.findOne({ _id: mongoose.Types.ObjectId(req.body.uid) }).then(e => {
     res.send(e);
   });
 });
@@ -41,20 +42,6 @@ router.post("/remove_user", function(req, res) {
 });
 
 // Group Routes
-
-// router.post('/groups', function (req, res) {
-//   const doc = new ref.Group(req.body)
-//   doc.save().then(e => {
-//     res.send(e._id)
-//   })
-// // console.log(req.body);
-//   ref.Group.where()
-//     .populate('ownerData')
-//     .find()
-//     .then(e => {
-//       // res.send(e)
-//     })
-// })
 
 router.post("/create-group", async (req, res) => {
   try {
@@ -121,32 +108,8 @@ router.get("/get_groups", async (req, res) => {
 });
 
 // Middleware function to check if the user is already a member of a group
-const checkGroupMembership = (req, res, next) => {
-  const userId = req.body.userId; // Assuming you have user authentication and session handling in place
-
-  ref.User.findById(userId, (err, user) => {
-    if (err) {
-      console.log("Error finding user:", err);
-      return res.status(500).json({ error: "Internal Server Error" });
-    }
-
-    if (user.currentGroup !== "none") {
-      console.log("You are already a member of another group.");
-      // User is already a member of another group, send a response indicating they cannot join another group
-      return res.status(403).json({
-        message:
-          "You are already a member of another group. Please leave the current group before joining a new one."
-      });
-    }
-
-    // User is not a member of any group, proceed to the next middleware or route handler
-    next();
-  });
-};
-
-router.post("/add_member", checkGroupMembership, async (req, res) => {
-  const groupId = req.body.groupId;
-  const userId = req.body.userId; // Assuming you have user authentication and session handling in place
+const checkGroupMembership = async (req, res, next) => {
+  const userId = req.body.userId;
 
   try {
     const user = await ref.User.findById(userId);
@@ -155,28 +118,56 @@ router.post("/add_member", checkGroupMembership, async (req, res) => {
       return res.status(404).json({ error: "User not found" });
     }
 
-    const group = await ref.Group.findOne({ _id: groupId, members: userId });
+    if (user.currentGroup !== "none") {
+      console.log("You are already a member of another group.");
+      return res.status(403).json({
+        message:
+          "You are already a member of another group. Please leave the current group before joining a new one."
+      });
+    }
+
+    // User is not a member of any group, proceed to the next middleware or route handler
+    next();
+  } catch (error) {
+    console.log("Error finding user:", error);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+router.post("/add_member", checkGroupMembership, async (req, res) => {
+  const groupId = req.body.groupId;
+  const userId = req.body.userId;
+
+  try {
+    const user = await ref.User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    const group = await ref.Group.findOne({ _id: groupId, members: user });
 
     if (group) {
-      // User is already a member, send a response indicating that
       return res
         .status(200)
         .json({ message: "User is already a member of the group" });
     }
 
-    // User is not a member, add their object to the group's member list
     const updatedGroup = await ref.Group.findByIdAndUpdate(
       groupId,
       { $addToSet: { members: user } },
       { new: true }
     );
-  // User successfully added as a member, send a response indicating that
-  ref.User.findByIdAndUpdate(
-    userId,
-    { currentGroup: groupId },
-    (err, user) => {}
-  );
-  
+
+    if (!updatedGroup) {
+      return res.status(404).json({ error: "Group not found" });
+    }
+
+    await ref.User.findByIdAndUpdate(userId, {
+      currentGroup: groupId,
+      joinTime: Date.now()
+    });
+
     return res
       .status(200)
       .json({ message: "User has been added as a member of the group" });
@@ -186,76 +177,30 @@ router.post("/add_member", checkGroupMembership, async (req, res) => {
   }
 });
 
-// router.post("/add_member", async (req, res) => {
-//   const groupId = req.body.groupId;
-//   const userId = req.body.userId; // Assuming you have user authentication and session handling in place
+// Define the deletion function
+const deleteEmptyGroups = async () => {
+  try {
+    // Find groups with empty member arrays or no members
+    const groupsToDelete = await ref.Group.find({
+      $or: [{ members: [] }, { members: { $exists: false } }]
+    });
 
-//   try {
-//     const user = await ref.User.findById(userId);
+    // Delete groups and their messages
+    for (const group of groupsToDelete) {
+      // Delete messages for the group
+      await ref.Message.deleteMany({ groupId: group._id });
 
-//     if (!user) {
-//       return res.status(404).json({ error: "User not found" });
-//     }
+      // Delete the group
+      await ref.Group.findByIdAndDelete(group._id);
+    }
 
-//     ref.Group.findOne({ _id: groupId, members: userId }, async (err, group) => {
-//       if (err) {
-//         console.log("Error checking group membership:", err);
-//         return res.status(500).json({ error: "Internal Server Error" });
-//       }
+    console.log("Empty groups and their messages have been deleted.");
+  } catch (error) {
+    console.error("Error deleting empty groups:", error);
+  }
+};
 
-//       if (group) {
-//         // User is already a member, send a response indicating that
-//         return res
-//           .status(200)
-//           .json({ message: "User is already a member of the group" });
-//       }
-
-//       // User is not a member, add their object to the group's member list
-//       const updatedGroup = await ref.Group.findByIdAndUpdate(
-//         groupId,
-//         { $addToSet: { members: user } },
-//         { new: true }
-//       );
-
-//       // User successfully added as a member, send a response indicating that
-//       return res
-//         .status(200)
-//         .json({ message: "User has been added as a member of the group" });
-//     });
-//   } catch (error) {
-//     console.log("Error adding user as group member:", error);
-//     return res.status(500).json({ error: "Internal Server Error" });
-//   }
-// });
-
-// ref.Group.where().populate("ownerData").find().then(e => {
-//   console.log(e);
-// });
-
-// router.post('/add_member', function (req, res) {
-
-//   ref.Group.where({ members: { $in: req.body.member } }).findOne(
-//     (err, data) => {
-//       // console.log(data);
-//       if (data === null) {
-//         ref.Group.updateOne(
-//           { _id: req.body.groupID },
-//           { $push: { members: req.body.member } }
-//         ).then(e => {})
-//       }
-//     }
-//   )
-// })
-// router.post('/delete_member', function (req, res) {
-//   console.log(req.body);
-//     ref.Group.updateOne(
-//       { _id: req.body.id },
-//       { $pull: { members: req.body.user } }
-//     ).then(e => {
-
-//       console.log(e);
-//     })
-
-// })
-
+// Schedule the deletion function to run every 5 minutes
+cron.schedule("* * * * *", deleteEmptyGroups);
 export default router;
+
