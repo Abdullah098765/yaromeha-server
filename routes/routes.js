@@ -48,9 +48,11 @@ router.post("/create-group", async (req, res) => {
     const { groupName, groupDescription, ownerId, members } = req.body;
 
     const existingGroup = await ref.Group.findOne({ ownerId });
+    console.log( "User has already created a group", ownerId);
+    
 
     if (existingGroup !== null) {
-      console.log(existingGroup, "User has already created a group", ownerId);
+      // console.log(existingGroup, "User has already created a group", ownerId);
       return res
         .status(400)
         .json({ error: "User has already created a group" });
