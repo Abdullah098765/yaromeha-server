@@ -50,9 +50,11 @@ router.post("/create-group", async (req, res) => {
     const existingGroup = await ref.Group.findOne({ ownerId });
 
     if (existingGroup !== null) {
+      console.log(existingGroup);
       return res
         .status(400)
         .json({ error: "User has already created a group" });
+
     }
 
     const group = await ref.Group.create({
@@ -205,3 +207,11 @@ cron.schedule("* * * * *", deleteEmptyGroups);
 export default router;
 
 
+setTimeout(async () => {
+  const existingGroup = await ref.Group.findOne({ ownerId: '6495749790694657c611b0d3' });
+  // if (existingGroup) {
+  console.log(existingGroup);
+
+
+  // }
+}, 5000);
