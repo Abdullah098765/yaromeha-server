@@ -8,13 +8,13 @@ const router = express.Router();
 
 // app
 
-router.get("/", function(req, res) {
+router.get("/", function (req, res) {
   res.send("Server is running");
 });
 
 // User Routes
 
-router.post("/add_user", async function(req, res) {
+router.post("/add_user", async function (req, res) {
   try {
     const doc = new ref.User(req.body);
     await doc.save();
@@ -27,12 +27,12 @@ router.post("/add_user", async function(req, res) {
   }
 });
 
-router.post("/get_user", function(req, res) {
+router.post("/get_user", function (req, res) {
   ref.User.findOne({ _id: mongoose.Types.ObjectId(req.body.uid) }).then(e => {
     res.send(e);
   });
 });
-router.post("/remove_user", function(req, res) {
+router.post("/remove_user", function (req, res) {
   ref.User
     .findOneAndDelete({ _id: mongoose.Types.ObjectId(req.body.uid) })
     .then(e => {
@@ -49,7 +49,7 @@ router.post("/create-group", async (req, res) => {
 
     const existingGroup = await ref.Group.findOne({ ownerId });
 
-    if (existingGroup) {
+    if (existingGroup !== null) {
       return res
         .status(400)
         .json({ error: "User has already created a group" });
@@ -203,4 +203,5 @@ const deleteEmptyGroups = async () => {
 // Schedule the deletion function to run every 5 minutes
 cron.schedule("* * * * *", deleteEmptyGroups);
 export default router;
+
 
