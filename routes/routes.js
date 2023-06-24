@@ -48,8 +48,8 @@ router.post("/create-group", async (req, res) => {
     const { groupName, groupDescription, ownerId, members } = req.body;
 
     const existingGroup = await ref.Group.findOne({ ownerId });
-    console.log( "User has already created a group", ownerId);
-    
+    console.log("User has already created a group", ownerId);
+
 
     if (existingGroup !== null) {
       // console.log(existingGroup, "User has already created a group", ownerId);
@@ -116,22 +116,28 @@ const checkGroupMembership = async (req, res, next) => {
   const userId = req.body.userId;
 
   try {
-    const user = await ref.User.findById(userId);
+    if (userId) {
 
-    if (!user) {
-      return res.status(404).json({ error: "User not found" });
+      const user = await ref.User.findById(userId);
+
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      if (user.currentGroup !== "none") {
+        console.log("You are already a member of another group.");
+        return res.status(403).json({
+          message:
+            "You are already a member of another group. Please leave the current group before joining a new one."
+        });
+      }
+      next();
+
+
     }
 
-    if (user.currentGroup !== "none") {
-      console.log("You are already a member of another group.");
-      return res.status(403).json({
-        message:
-          "You are already a member of another group. Please leave the current group before joining a new one."
-      });
-    }
+
 
     // User is not a member of any group, proceed to the next middleware or route handler
-    next();
   } catch (error) {
     console.log("Error finding user:", error);
     return res.status(500).json({ error: "Internal Server Error" });
