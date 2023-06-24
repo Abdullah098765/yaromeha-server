@@ -78,10 +78,10 @@ export const socketIO = server => {
 
         // Perform additional processing or actions based on the message
         // ...
-        const messages = await ref.Message.find({ groupId: savedMessage.groupId });
+        const messages = await ref.Message.find({ groupId:savedMessage.groupId });
 
         // Send a response back to the frontend (optional)
-        io.emit("message-received" + savedMessage.groupId, {
+        io.emit("message-received"+savedMessage.groupId, {
           status: "success",
           message: "Message received and saved",
           messages
@@ -97,7 +97,7 @@ export const socketIO = server => {
       }
     });
 
-
+  
 
     // Handle disconnect event
     socket.on("disconnect", async () => {
@@ -105,13 +105,13 @@ export const socketIO = server => {
 
       const { groupId, memberId } = socket.handshake.query;
       console.log(groupId, memberId);
-      if (memberId) {
-        const updatedGroup = await ref.Group.findByIdAndUpdate(
-          groupId,
-          { $pull: { members: { _id: mongoose.Types.ObjectId(memberId) } } },
-          { new: true }
-        );
-      }
+
+      const updatedGroup = await ref.Group.findByIdAndUpdate(
+        groupId,
+        { $pull: { members: { _id: mongoose.Types.ObjectId(memberId) } } },
+        { new: true }
+      );
+
       try {
         await ref.User.findByIdAndUpdate(memberId, { currentGroup: "none" });
         console.log("User currentGroup updated to none");
@@ -123,7 +123,7 @@ export const socketIO = server => {
     });
   });
 
-
+ 
   // io.on('connection', socket => {
   //   console.log(
   //     'a user connected'

@@ -28,23 +28,17 @@ router.post("/add_user", async function (req, res) {
 });
 
 router.post("/get_user", function (req, res) {
-
-  if (req.body.uid) {
-    ref.User.findOne({ _id: mongoose.Types.ObjectId(req.body.uid) }).then(e => {
-      res.send(e);
-    });
-  }
+  ref.User.findOne({ _id: mongoose.Types.ObjectId(req.body.uid) }).then(e => {
+    res.send(e);
+  });
 });
 router.post("/remove_user", function (req, res) {
-  if (req.body.uid) {
-
-    ref.User
-      .findOneAndDelete({ _id: mongoose.Types.ObjectId(req.body.uid) })
-      .then(e => {
-        res.send(e);
-        console.log("user logged out", e);
-      });
-  }
+  ref.User
+    .findOneAndDelete({ _id: mongoose.Types.ObjectId(req.body.uid) })
+    .then(e => {
+      res.send(e);
+      console.log("user logged out", e);
+    });
 });
 
 // Group Routes
@@ -54,8 +48,8 @@ router.post("/create-group", async (req, res) => {
     const { groupName, groupDescription, ownerId, members } = req.body;
 
     const existingGroup = await ref.Group.findOne({ ownerId });
-    console.log("User has already created a group", ownerId);
-
+    console.log( "User has already created a group", ownerId);
+    
 
     if (existingGroup !== null) {
       // console.log(existingGroup, "User has already created a group", ownerId);
@@ -122,28 +116,22 @@ const checkGroupMembership = async (req, res, next) => {
   const userId = req.body.userId;
 
   try {
-    if (userId) {
+    const user = await ref.User.findById(userId);
 
-      const user = await ref.User.findById(userId);
-
-      if (!user) {
-        return res.status(404).json({ error: "User not found" });
-      }
-      if (user.currentGroup !== "none") {
-        console.log("You are already a member of another group.");
-        return res.status(403).json({
-          message:
-            "You are already a member of another group. Please leave the current group before joining a new one."
-        });
-      }
-      next();
-
-
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
     }
 
-
+    if (user.currentGroup !== "none") {
+      console.log("You are already a member of another group.");
+      return res.status(403).json({
+        message:
+          "You are already a member of another group. Please leave the current group before joining a new one."
+      });
+    }
 
     // User is not a member of any group, proceed to the next middleware or route handler
+    next();
   } catch (error) {
     console.log("Error finding user:", error);
     return res.status(500).json({ error: "Internal Server Error" });
@@ -154,44 +142,42 @@ router.post("/add_member", checkGroupMembership, async (req, res) => {
   const groupId = req.body.groupId;
   const userId = req.body.userId;
 
-  if (userId) {
-    try {
-      const user = await ref.User.findById(userId);
+  try {
+    const user = await ref.User.findById(userId);
 
-      if (!user) {
-        return res.status(404).json({ error: "User not found" });
-      }
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
 
-      const group = await ref.Group.findOne({ _id: groupId, members: user });
+    const group = await ref.Group.findOne({ _id: groupId, members: user });
 
-      if (group) {
-        return res
-          .status(200)
-          .json({ message: "User is already a member of the group" });
-      }
-
-      const updatedGroup = await ref.Group.findByIdAndUpdate(
-        groupId,
-        { $addToSet: { members: user } },
-        { new: true }
-      );
-
-      if (!updatedGroup) {
-        return res.status(404).json({ error: "Group not found" });
-      }
-
-      await ref.User.findByIdAndUpdate(userId, {
-        currentGroup: groupId,
-        joinTime: Date.now()
-      });
-
+    if (group) {
       return res
         .status(200)
-        .json({ message: "User has been added as a member of the group" });
-    } catch (error) {
-      console.log("Error adding user as group member:", error);
-      return res.status(500).json({ error: "Internal Server Error" });
+        .json({ message: "User is already a member of the group" });
     }
+
+    const updatedGroup = await ref.Group.findByIdAndUpdate(
+      groupId,
+      { $addToSet: { members: user } },
+      { new: true }
+    );
+
+    if (!updatedGroup) {
+      return res.status(404).json({ error: "Group not found" });
+    }
+
+    await ref.User.findByIdAndUpdate(userId, {
+      currentGroup: groupId,
+      joinTime: Date.now()
+    });
+
+    return res
+      .status(200)
+      .json({ message: "User has been added as a member of the group" });
+  } catch (error) {
+    console.log("Error adding user as group member:", error);
+    return res.status(500).json({ error: "Internal Server Error" });
   }
 });
 
