@@ -28,17 +28,23 @@ router.post("/add_user", async function (req, res) {
 });
 
 router.post("/get_user", function (req, res) {
-  ref.User.findOne({ _id: mongoose.Types.ObjectId(req.body.uid) }).then(e => {
-    res.send(e);
-  });
+
+  if (req.body.uid) {
+    ref.User.findOne({ _id: mongoose.Types.ObjectId(req.body.uid) }).then(e => {
+      res.send(e);
+    });
+  }
 });
 router.post("/remove_user", function (req, res) {
-  ref.User
-    .findOneAndDelete({ _id: mongoose.Types.ObjectId(req.body.uid) })
-    .then(e => {
-      res.send(e);
-      console.log("user logged out", e);
-    });
+  if (req.body.uid) {
+
+    ref.User
+      .findOneAndDelete({ _id: mongoose.Types.ObjectId(req.body.uid) })
+      .then(e => {
+        res.send(e);
+        console.log("user logged out", e);
+      });
+  }
 });
 
 // Group Routes
