@@ -148,42 +148,44 @@ router.post("/add_member", checkGroupMembership, async (req, res) => {
   const groupId = req.body.groupId;
   const userId = req.body.userId;
 
-  try {
-    const user = await ref.User.findById(userId);
+  if (userId) {
+    try {
+      const user = await ref.User.findById(userId);
 
-    if (!user) {
-      return res.status(404).json({ error: "User not found" });
-    }
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
 
-    const group = await ref.Group.findOne({ _id: groupId, members: user });
+      const group = await ref.Group.findOne({ _id: groupId, members: user });
 
-    if (group) {
+      if (group) {
+        return res
+          .status(200)
+          .json({ message: "User is already a member of the group" });
+      }
+
+      const updatedGroup = await ref.Group.findByIdAndUpdate(
+        groupId,
+        { $addToSet: { members: user } },
+        { new: true }
+      );
+
+      if (!updatedGroup) {
+        return res.status(404).json({ error: "Group not found" });
+      }
+
+      await ref.User.findByIdAndUpdate(userId, {
+        currentGroup: groupId,
+        joinTime: Date.now()
+      });
+
       return res
         .status(200)
-        .json({ message: "User is already a member of the group" });
+        .json({ message: "User has been added as a member of the group" });
+    } catch (error) {
+      console.log("Error adding user as group member:", error);
+      return res.status(500).json({ error: "Internal Server Error" });
     }
-
-    const updatedGroup = await ref.Group.findByIdAndUpdate(
-      groupId,
-      { $addToSet: { members: user } },
-      { new: true }
-    );
-
-    if (!updatedGroup) {
-      return res.status(404).json({ error: "Group not found" });
-    }
-
-    await ref.User.findByIdAndUpdate(userId, {
-      currentGroup: groupId,
-      joinTime: Date.now()
-    });
-
-    return res
-      .status(200)
-      .json({ message: "User has been added as a member of the group" });
-  } catch (error) {
-    console.log("Error adding user as group member:", error);
-    return res.status(500).json({ error: "Internal Server Error" });
   }
 });
 
