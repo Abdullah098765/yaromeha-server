@@ -105,7 +105,7 @@ export const socketIO = server => {
 
       const { groupId, memberId } = socket.handshake.query;
       console.log(groupId, memberId);
-      if (memberId) {
+      if (memberId !== null) {
         const updatedGroup = await ref.Group.findByIdAndUpdate(
           groupId,
           { $pull: { members: { _id: mongoose.Types.ObjectId(memberId) } } },
